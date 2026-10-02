@@ -1,0 +1,23 @@
+{
+  "id": "./",
+  "name": "Remi Premium — Marcador de Cartas",
+  "short_name": "Remi Premium",
+  "description": "Marca as rondas do Remi com histórico e pontuação guardada no dispositivo.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone"
+  ],
+  "background_color": "#111016",
+  "theme_color": "#c62c33",
+  "lang": "pt-PT",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
