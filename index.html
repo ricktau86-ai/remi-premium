@@ -1,0 +1,1511 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f6ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Remi Premium">
+  <meta name="color-scheme" content="light dark">
+  <title>Remi Premium — Marcador de Cartas</title>
+  <meta name="description" content="Pontuações do Remi, rondas, jokers e histórico guardados no dispositivo.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
+  <!-- Fonte opcional; com ou sem Internet existem alternativas locais. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Apenas CSS local: a aplicação funciona sem Internet. */
+    :root {
+      --felt:#0f3d2e; --felt-dark:#08291f; --card:#154735;
+      --card-light:#1c513e; --ivory:#e8dfc8; --muted:#b7bca9;
+      --gold:#f2c14e; --gold-soft:rgba(242,193,78,.14);
+      --red:#a13d3d; --line:rgba(232,223,200,.17);
+      --ring:rgba(242,193,78,.55); --radius:18px;
+      --sans:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+    }
+    * {box-sizing:border-box}
+    html { -webkit-text-size-adjust:100%; scroll-behavior:smooth }
+    body {
+      margin:0; min-width:280px; min-height:100dvh; color:var(--ivory);
+      font:15px/1.45 var(--sans);
+      background:
+        radial-gradient(ellipse at 52% -10%,rgba(60,127,88,.35),transparent 65%),
+        radial-gradient(ellipse at 100% 110%,rgba(0,15,12,.54),transparent 60%),
+        var(--felt);
+    }
+    body::before {
+      content:"";pointer-events:none;position:fixed;inset:0;z-index:-1;opacity:.2;
+      background-image:repeating-linear-gradient(33deg,transparent 0,transparent 3px,rgba(255,255,255,.022) 4px,transparent 6px);
+    }
+    button,input,summary {font:inherit}
+    button {-webkit-tap-highlight-color:transparent;cursor:pointer}
+    button:disabled {cursor:not-allowed;opacity:.45}
+    button:focus-visible,input:focus-visible,summary:focus-visible {
+      outline:3px solid var(--ring);outline-offset:3px;
+    }
+    .sr-only {position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .app {width:min(100%,940px);margin-inline:auto;padding:calc(19px + env(safe-area-inset-top,0px)) max(13px,env(safe-area-inset-right,0px)) calc(36px + env(safe-area-inset-bottom,0px)) max(13px,env(safe-area-inset-left,0px))}
+    .topbar {display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:20px}
+    .brand {display:flex;align-items:center;gap:11px;min-width:0}
+    .brand-icon {width:45px;height:51px;display:grid;place-items:center;border:1px solid var(--gold);border-radius:11px;color:var(--gold);font-size:32px;flex-shrink:0;box-shadow:inset 0 0 0 3px rgba(242,193,78,.075);transform:rotate(-6deg)}
+    .brand-subtitle {font-size:10px;font-weight:750;letter-spacing:.21em;text-transform:uppercase;color:var(--gold)}
+    h1,h2,h3,p {margin:0}
+    h1,h2,h3 {font-family:var(--serif);font-weight:700}
+    h1 {font-size:clamp(1.48rem,5.5vw,2rem);line-height:1.12;letter-spacing:-.025em}
+    h2 {font-size:1.5rem;line-height:1.2}
+    h3 {font-size:1.13rem}
+    .subtle {color:var(--muted);font-size:.88rem}
+    .top-actions {display:flex;gap:8px;flex-wrap:wrap}
+    .button {display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.055);color:var(--ivory);font-weight:650;transition:background .15s,transform .12s,border-color .15s}
+    .button:active:not(:disabled),.icon-button:active:not(:disabled),.step:active:not(:disabled) {transform:scale(.96)}
+    .button:hover:not(:disabled) {background:rgba(255,255,255,.105)}
+    .button-primary {background:var(--gold);border-color:var(--gold);color:var(--felt-dark);font-weight:800}
+    .button-primary:hover:not(:disabled) {background:#ffdc77}
+    .button-danger {border-color:rgba(194,96,96,.5);color:#ffd5d2}
+    .button-danger:hover:not(:disabled) {background:rgba(161,61,61,.25)}
+    .button-full {width:100%;min-height:54px;font-size:1.03rem}
+    .button-text {border:0;background:none;color:var(--gold);padding:5px 3px;min-height:40px;font-weight:700}
+    .section {background:linear-gradient(145deg,rgba(30,83,62,.98),rgba(16,57,43,.98));border:1px solid var(--line);border-radius:var(--radius);padding:clamp(14px,4vw,23px);box-shadow:0 12px 28px rgba(0,0,0,.14);margin-bottom:16px}
+    .section-title {display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+    .eyebrow {font-size:.71rem;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);font-weight:800;margin-bottom:7px}
+    .intro {margin-bottom:22px}
+    .intro h2 {font-size:clamp(1.65rem,6vw,2.15rem);margin-bottom:8px}
+    .counter,.pill {border:1px solid var(--line);border-radius:99px;padding:5px 10px;color:var(--muted);font-size:.8rem;font-weight:750;white-space:nowrap}
+    .pill-done {border-color:rgba(117,206,150,.42);color:#aee9bb;background:rgba(80,158,111,.11)}
+    .pill-pending {color:#eed49b;background:rgba(242,193,78,.08);border-color:rgba(242,193,78,.22)}
+    .input {height:45px;min-width:0;width:100%;border:1px solid rgba(232,223,200,.27);border-radius:11px;padding:9px 12px;background:#0b3025;color:var(--ivory);outline:none;font-size:16px;box-shadow:inset 0 2px 4px rgba(0,0,0,.08)}
+    .input:focus {border-color:var(--gold);box-shadow:0 0 0 3px rgba(242,193,78,.13)}
+    .input:disabled {color:var(--gold);opacity:1;background:#234a37;-webkit-text-fill-color:var(--gold);border-color:rgba(242,193,78,.35);font-weight:850}
+    input[type="number"] {appearance:textfield;-moz-appearance:textfield}
+    input::-webkit-inner-spin-button,input::-webkit-outer-spin-button {-webkit-appearance:none;margin:0}
+    .field-label {display:block;margin-bottom:5px;color:var(--muted);font-size:.78rem;font-weight:650}
+    .player-config {display:grid;grid-template-columns:30px minmax(0,1fr) 44px;gap:9px;align-items:center;margin:9px 0}
+    .player-number {color:var(--gold);font:700 1.1rem var(--serif);text-align:center}
+    .icon-button {width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:11px;background:rgba(0,0,0,.12);color:var(--ivory);font-size:1.32rem}
+    .icon-button-remove {color:#ffc0bc;border-color:rgba(161,61,61,.34)}
+    .section-foot {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .hint {color:var(--muted);font-size:.8rem}
+    .validation {min-height:23px;font-size:.83rem;color:#f1cf84;margin:5px 0 10px}
+    .rounds-detail {padding:0;overflow:hidden}
+    .rounds-detail > summary {display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;padding:19px 20px;min-height:70px;cursor:pointer}
+    .rounds-detail > summary::-webkit-details-marker {display:none}
+    .rounds-detail > summary::after {content:"⌄";font-size:1.45rem;line-height:1;color:var(--gold);transition:transform .15s}
+    .rounds-detail[open] > summary::after {transform:rotate(180deg)}
+    .rounds-detail-content {border-top:1px solid var(--line);padding:14px}
+    .round-config {display:grid;grid-template-columns:27px 72px minmax(0,1fr) 42px;gap:8px;align-items:end;margin:10px 0}
+    .round-config .field-label {font-size:.71rem;white-space:nowrap}
+    .round-config .input {padding-inline:8px}
+    .round-index {align-self:center;text-align:center;color:var(--gold);font-weight:750}
+    .round-config .icon-button {width:42px;height:45px}
+    .callout {padding:11px 13px;background:var(--gold-soft);border-left:3px solid var(--gold);border-radius:0 9px 9px 0;color:var(--ivory);font-size:.86rem;margin-bottom:15px}
+    .board-label {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:20px 0 10px}
+    .leaders {display:flex;gap:9px;overflow-x:auto;padding:2px 1px 13px;scrollbar-width:thin;scrollbar-color:rgba(242,193,78,.4) transparent;overscroll-behavior-x:contain}
+    .leader-chip {flex:1 0 130px;max-width:220px;min-height:80px;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px;border:1px solid rgba(232,223,200,.2);border-radius:15px;background:rgba(6,35,26,.6)}
+    .leader-chip.is-leader {border-color:var(--gold);background:linear-gradient(145deg,rgba(242,193,78,.19),rgba(31,70,44,.7));box-shadow:inset 0 0 0 1px rgba(242,193,78,.2)}
+    .leader-name {font-size:.84rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .leader-name .trophy {color:var(--gold);margin-right:3px}
+    .leader-score {font-family:var(--serif);font-size:1.52rem;line-height:1;font-weight:700;font-variant-numeric:tabular-nums}
+    .leader-chip.is-leader .leader-score {color:var(--gold)}
+    .board-meta {font-size:.81rem;color:var(--muted);margin-bottom:17px}
+    .round-card {padding:0;overflow:hidden}
+    .round-header {padding:15px 16px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:11px;border-bottom:1px solid var(--line)}
+    .round-heading {display:flex;align-items:center;gap:11px;min-width:0}
+    .round-medallion {width:43px;height:43px;border-radius:12px;flex-shrink:0;border:1px solid rgba(242,193,78,.48);color:var(--gold);font:700 1.35rem var(--serif);display:grid;place-items:center;background:rgba(242,193,78,.07)}
+    .round-contract {font-size:.93rem;color:var(--ivory);margin-top:3px;overflow-wrap:anywhere}
+    .round-players {padding:7px}
+    .score-row {display:grid;grid-template-columns:44px minmax(0,1fr) 83px;grid-template-areas:"win person points" "win jokers points";gap:3px 8px;align-items:center;padding:8px 7px;border-radius:12px}
+    .score-row:nth-child(even) {background:rgba(0,0,0,.105)}
+    .winner-button {grid-area:win;width:44px;min-height:72px;border-radius:10px;border:1px solid rgba(232,223,200,.22);color:var(--muted);background:rgba(0,0,0,.13);font-size:1.42rem;display:grid;place-items:center}
+    .winner-button.selected {background:var(--gold);color:var(--felt-dark);border-color:var(--gold);box-shadow:0 0 0 2px rgba(242,193,78,.16)}
+    .score-name {grid-area:person;font-size:.9rem;font-weight:750;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .joker-controls {grid-area:jokers;display:flex;align-items:center;gap:4px;min-width:0}
+    .joker-label {color:var(--muted);font-size:.72rem;margin-right:2px}
+    .joker-emoji {display:none}
+    .step {width:35px;height:40px;min-width:35px;border:1px solid rgba(232,223,200,.26);border-radius:10px;background:rgba(0,0,0,.16);color:var(--ivory);font-size:1.25rem;font-weight:650;line-height:1}
+    .step-plus {color:var(--gold)}
+    .joker-count {min-width:20px;text-align:center;font-size:.86rem;font-weight:750;font-variant-numeric:tabular-nums}
+    .points-wrap {grid-area:points;text-align:center;min-width:0}
+    .points-label {display:block;font-size:.67rem;color:var(--muted);margin-bottom:4px}
+    .points-input {width:100%;height:48px;text-align:center;padding:6px 3px;font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+    .points-unit {font-size:.65rem;color:var(--muted);margin-top:3px}
+    .round-footer {padding:9px 15px 12px;border-top:1px solid var(--line);font-size:.76rem;color:var(--muted)}
+    .round-footer .ok {color:#aee9bb}
+    .results {border:1px solid rgba(242,193,78,.46);background:linear-gradient(155deg,#20513a,#0b2f24)}
+    .result-row {display:grid;grid-template-columns:40px minmax(0,1fr) 92px 77px;align-items:center;gap:8px;min-height:58px;padding:9px 4px;border-top:1px solid var(--line)}
+    .result-row:first-child {border-top:0}
+    .place {font:700 1.17rem var(--serif);color:var(--muted);text-align:center}
+    .place.first {color:var(--gold)}
+    .result-name {font-weight:750;overflow-wrap:anywhere;min-width:0}
+    .result-points {font:700 1.2rem var(--serif);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+    .result-jokers {color:var(--muted);font-size:.84rem;text-align:right;white-space:nowrap}
+    .result-labels {display:grid;grid-template-columns:40px minmax(0,1fr) 92px 77px;gap:8px;padding:5px 4px 8px;font-size:.72rem;color:var(--muted)}
+    .result-labels span:nth-child(n+3) {text-align:right}
+    .summary-note {margin-top:14px;padding-top:13px;border-top:1px solid var(--line);color:var(--muted);font-size:.85rem}
+    .storage-notice {text-align:center;margin:15px 0 2px;color:var(--muted);font-size:.78rem}
+    .storage-notice.storage-error {color:#ffc0bc}
+    @media(min-width:670px) {
+      .score-row {grid-template-columns:44px minmax(135px,1fr) 195px 115px;grid-template-areas:"win person jokers points";gap:10px}
+      .winner-button {min-height:50px}
+      .round-players {padding:9px 13px}
+      .score-name {font-size:1rem}
+      .points-unit {display:none}
+      .joker-label {margin-right:8px;font-size:.82rem}
+    }
+    @media(max-width:370px) {
+      .app {padding-right:max(10px,env(safe-area-inset-right,0px));padding-left:max(10px,env(safe-area-inset-left,0px))}
+      .round-players {padding:5px}
+      .score-row {grid-template-columns:40px minmax(0,1fr) 72px;gap:2px 5px;padding:7px 4px}
+      .winner-button {width:40px}
+      .joker-label {display:none}
+      .joker-emoji {display:inline;font-size:.8rem;line-height:1}
+      .step {width:31px;height:40px;min-width:31px}
+      .joker-count {min-width:14px}
+      .round-config {grid-template-columns:19px 60px minmax(0,1fr) 40px;gap:5px}
+      .round-config .input {font-size:14px}
+      .result-row,.result-labels {grid-template-columns:25px minmax(0,1fr) 76px 62px;gap:5px}
+      .result-points {font-size:1.08rem}
+    }
+    @media(prefers-reduced-motion:reduce) {*{scroll-behavior:auto!important;transition:none!important}}
+
+    /* ================= REMI POP · IDENTIDADE 2026 =================
+       Os tokens abaixo suportam alternância claro/escuro sem bibliotecas. */
+    :root,html[data-theme="light"] {
+      color-scheme: light;
+      --felt:#f6f7ff;--felt-dark:#f1f2ff;--card:#fff;--card-light:#fff;
+      --ivory:#18213d;--muted:#6e7797;--gold:#684bf5;
+      --gold-soft:rgba(104,75,245,.09);--red:#bf395e;
+      --line:#e3e6f4;--ring:rgba(104,75,245,.34);
+      --page:#f6f7ff;--surface:#fff;--surface-sub:#f8f9ff;
+      --text:#18213d;--text-soft:#6e7797;--purple:#684bf5;
+      --purple-pale:#eeeaff;--accent:#22bfa5;--accent-pale:#e1faf4;
+      --sun:#ffbc4f;--sun-pale:#fff3d7;
+      --danger:#bb4264;--danger-pale:#fff0f3;--shadow:0 14px 45px rgba(37,41,92,.07);
+      --sans:ui-rounded,"Arial Rounded MT Bold",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+      --serif:var(--sans);
+    }
+    html[data-theme="dark"] {
+      color-scheme:dark;
+      --felt:#0e1223;--felt-dark:#12182c;--card:#1a2035;--card-light:#212940;
+      --ivory:#f2f3ff;--muted:#a4acc8;--gold:#aa9bff;
+      --gold-soft:rgba(150,123,255,.16);--red:#ff8299;
+      --line:#343b54;--ring:rgba(170,155,255,.48);
+      --page:#0e1223;--surface:#1a2035;--surface-sub:#222b43;
+      --text:#f2f3ff;--text-soft:#a4acc8;--purple:#a99bff;
+      --purple-pale:#32305a;--accent:#56dcc4;--accent-pale:#173f42;
+      --sun:#ffcf74;--sun-pale:#453a36;
+      --danger:#ff8aa0;--danger-pale:#452c40;--shadow:0 16px 48px rgba(0,0,0,.22);
+    }
+    html{color-scheme:light dark;scroll-behavior:smooth}
+    body{
+      background:radial-gradient(ellipse 480px 380px at 93% 3%,rgba(117,100,255,.17),transparent 80%),
+        radial-gradient(ellipse 390px 500px at -15% 29%,rgba(52,209,184,.1),transparent 85%),var(--page);
+      color:var(--text);font:15px/1.47 var(--sans);
+      transition:background-color .22s ease,color .22s ease;
+    }
+    body::before{display:none}
+    .app{max-width:800px;padding:calc(16px + env(safe-area-inset-top,0px))
+      max(14px,env(safe-area-inset-right,0px))
+      calc(36px + env(safe-area-inset-bottom,0px))
+      max(14px,env(safe-area-inset-left,0px))}
+    h1,h2,h3{font-family:var(--sans);letter-spacing:-.045em}
+    h1{font-size:1.34rem;font-weight:900;letter-spacing:-.06em}
+    h2{font-size:clamp(1.3rem,5vw,1.73rem);font-weight:850}
+    h3{font-size:1.06rem;font-weight:850}
+    .subtle,.hint,.field-label{color:var(--text-soft)}
+    .topbar{margin-bottom:18px;align-items:center;gap:10px}
+    .brand{gap:10px}
+    .brand-icon{
+      width:46px;height:49px;border:0;border-radius:16px;color:white;
+      background:linear-gradient(145deg,#ff7f9d,#7856f6 80%);
+      font-size:28px;font-weight:800;box-shadow:0 9px 17px rgba(104,75,245,.17);
+      transform:rotate(-9deg);
+    }
+    .brand-subtitle{color:var(--purple);letter-spacing:.12em;font-size:.66rem}
+    .top-actions{gap:7px;align-items:center}
+    .theme-toggle{width:45px;height:45px;padding:0;border-radius:14px;font-size:1.28rem;flex:none;
+      background:var(--surface);border:1px solid var(--line);color:var(--text);box-shadow:var(--shadow)}
+    .button{border-radius:13px;min-height:44px;color:var(--text);background:var(--surface);
+      border:1px solid var(--line);font-size:.85rem;font-weight:750;box-shadow:0 3px 8px rgba(0,0,0,.015)}
+    .button:hover:not(:disabled){background:var(--surface-sub);border-color:var(--purple)}
+    .button-primary,.button-primary:hover:not(:disabled){color:white;background:linear-gradient(105deg,#6b4cf5,#9f59ed);border-color:transparent;
+      box-shadow:0 10px 22px rgba(104,75,245,.22)}
+    .button-danger{color:var(--danger);background:var(--danger-pale);border-color:transparent}
+    .button-danger:hover:not(:disabled){background:var(--danger-pale)}
+    .button-full{border-radius:17px;font-size:1rem;min-height:57px}
+    .button-text{color:var(--purple)}
+    .section{border:1px solid var(--line);border-radius:23px;background:var(--surface);box-shadow:var(--shadow);margin-bottom:16px;
+      padding:clamp(16px,3.9vw,23px)}
+    .section-title{margin-bottom:16px}
+    .intro{position:relative;overflow:hidden;border-radius:27px;
+      background:linear-gradient(117deg,#5d4df4 0%,#9370f5 65%,#ca87f7 100%);
+      color:#fff;padding:27px 24px;margin-bottom:17px;min-height:175px;isolation:isolate;
+      box-shadow:0 16px 35px rgba(97,79,244,.18)}
+    .intro::before,.intro::after{content:"";position:absolute;border-radius:50%;z-index:-1;pointer-events:none}
+    .intro::before{width:210px;height:210px;background:rgba(255,255,255,.095);right:-70px;top:-100px}
+    .intro::after{width:170px;height:170px;border:23px solid rgba(255,255,255,.08);right:34px;bottom:-120px}
+    .intro .eyebrow{color:#ede9ff;font-size:.72rem;letter-spacing:.09em}
+    .intro h2{font-size:clamp(1.8rem,7vw,2.5rem);line-height:1.08;font-weight:920;color:white;margin-bottom:10px}
+    .intro .subtle{color:#f1eeff;max-width:30ch;font-size:.92rem}
+    .hero-sparkle{position:absolute;right:21px;top:41px;font-size:3.3rem;transform:rotate(-17deg);filter:drop-shadow(0 5px 9px rgba(20,0,82,.17))}
+    .eyebrow{color:var(--purple);letter-spacing:.11em;font-size:.68rem}
+    .counter{background:var(--purple-pale);color:var(--purple);border:0;padding:6px 11px;font-weight:850}
+    .pill{background:var(--surface-sub);border-color:var(--line);color:var(--text-soft);font-size:.72rem}
+    .pill-done{background:var(--accent-pale);border-color:transparent;color:var(--accent)}
+    .pill-pending{background:var(--sun-pale);border-color:transparent;color:var(--text)}
+    .input{background:var(--surface-sub);color:var(--text);border:1.5px solid var(--line);border-radius:13px;
+      min-height:46px;box-shadow:none;font-size:16px}
+    .input:focus{border-color:var(--purple);box-shadow:0 0 0 3px var(--gold-soft)}
+    .input:disabled{color:var(--purple);-webkit-text-fill-color:var(--purple);background:var(--purple-pale);border-color:transparent}
+    .player-number{color:var(--purple);background:var(--purple-pale);width:30px;height:30px;display:grid;place-items:center;
+      border-radius:11px;font:850 .9rem var(--sans)}
+    .player-config{grid-template-columns:32px minmax(0,1fr) 44px;gap:9px;margin:11px 0}
+    .icon-button{background:var(--surface-sub);border-color:var(--line);color:var(--text);border-radius:12px}
+    .icon-button-remove{background:var(--danger-pale);border-color:transparent;color:var(--danger)}
+    .rounds-detail{padding:0}
+    .rounds-detail>summary{padding:19px 21px}
+    .rounds-detail>summary::after{color:var(--purple)}
+    .rounds-detail-content{padding:17px}
+    .round-index{color:var(--purple);font-weight:850}
+    .round-config{grid-template-columns:29px 75px minmax(0,1fr) 42px}
+    .callout{border:0;border-radius:17px;padding:15px 16px;background:var(--accent-pale);color:var(--text);
+      font-size:.89rem;margin-bottom:15px}
+    .validation{color:var(--danger);font-weight:700}
+    .board-label{margin:21px 0 10px}
+    .leaders{scrollbar-width:none;gap:10px;padding:2px 1px 14px}
+    .leaders::-webkit-scrollbar{display:none}
+    .leader-chip{flex:1 0 126px;max-width:240px;min-height:93px;border-radius:19px;
+      background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);
+      padding:14px 13px;position:relative;overflow:hidden}
+    .leader-chip.is-leader{background:linear-gradient(140deg,#684bf5,#aa75f7);color:white;
+      border-color:transparent;box-shadow:0 12px 24px rgba(103,76,245,.21)}
+    .leader-chip.is-leader::after{content:"✦";position:absolute;right:11px;bottom:-17px;
+      font-size:74px;opacity:.1;line-height:1;pointer-events:none}
+    .leader-name{font-size:.84rem;font-weight:780}
+    .leader-score{font:900 1.64rem/1.1 var(--sans);letter-spacing:-.05em}
+    .leader-chip.is-leader .leader-score,.leader-chip.is-leader .trophy{color:#fff}
+    .leader-chip.is-leader .score-unit{color:#eae4ff}
+    .leader-chip:not(.is-leader) .score-unit{color:var(--text-soft)}
+    .board-meta{font-size:.78rem;margin-bottom:11px}
+    .progress-line{display:flex;justify-content:space-between;align-items:center;gap:7px;
+      font-size:.79rem;color:var(--text-soft);font-weight:750;margin-top:10px}
+    .progress-track{height:8px;border-radius:99px;background:var(--purple-pale);overflow:hidden;margin-bottom:16px}
+    .progress-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#30cbb1,#7665f8);
+      transition:width .24s ease}
+    .round-card{border-radius:22px}
+    .round-header{padding:16px 16px 14px;background:var(--surface);border-color:var(--line)}
+    .round-medallion{border:0;background:var(--purple-pale);color:var(--purple);border-radius:15px;
+      font:900 1.23rem var(--sans);width:45px;height:45px}
+    .round-header h3{font-size:.98rem}
+    .round-contract{font-size:.86rem;color:var(--text-soft);font-weight:620}
+    .round-players{padding:8px}
+    .score-row{border-radius:14px;padding:9px 7px;gap:4px 9px}
+    .score-row:nth-child(even){background:var(--surface-sub)}
+    .winner-button{background:var(--surface-sub);border:1px solid var(--line);color:var(--text-soft);border-radius:13px;
+      font-size:1.37rem}
+    .winner-button.selected{background:linear-gradient(145deg,#fdb74e,#ffe086);border-color:transparent;color:#654009;
+      box-shadow:0 5px 15px rgba(246,184,68,.18)}
+    .score-name{font-weight:850;font-size:.91rem;color:var(--text)}
+    .joker-label{color:var(--text-soft)}
+    .step{background:var(--surface);border:1px solid var(--line);color:var(--text);border-radius:10px;
+      min-width:34px;width:34px;height:37px}
+    .step-plus{background:var(--purple-pale);color:var(--purple);border-color:transparent}
+    .joker-count{color:var(--text);font-weight:850}
+    .points-label,.points-unit{color:var(--text-soft)}
+    .points-input{height:49px;background:var(--surface);border-radius:12px;font-weight:850}
+    .round-footer{color:var(--text-soft);padding:11px 16px 13px}
+    .round-footer .ok{color:var(--accent);font-weight:700}
+    .results{border:1.5px solid var(--line);background:var(--surface);margin-top:21px}
+    .result-row{border-color:var(--line);min-height:65px}
+    .result-row:first-child{background:var(--purple-pale);border-radius:14px 14px 0 0}
+    .place{font:850 1.05rem var(--sans);color:var(--text-soft)}
+    .place.first{color:var(--purple)}
+    .result-name{font-weight:820}
+    .result-points{font:900 1.17rem var(--sans);letter-spacing:-.04em}
+    .result-jokers,.result-labels{color:var(--text-soft)}
+    .summary-note{border-color:var(--line);color:var(--text-soft)}
+    .summary-note strong{color:var(--text)!important}
+    .export-call{padding:17px;border-radius:18px;background:linear-gradient(120deg,var(--purple-pale),var(--accent-pale));
+      display:flex;gap:13px;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-top:17px}
+    .export-call strong{display:block;font-size:.95rem}
+    .export-call small{display:block;color:var(--text-soft);font-size:.78rem;margin-top:3px}
+    .export-call .button{white-space:nowrap}
+    .storage-notice{color:var(--text-soft)}
+    .storage-notice.storage-error{color:var(--danger)}
+    .export-overlay[hidden]{display:none!important}
+    .export-overlay{position:fixed;inset:0;background:rgba(9,12,29,.75);z-index:99;
+      display:flex;align-items:center;justify-content:center;padding:15px;
+      padding-top:calc(15px + env(safe-area-inset-top,0px));padding-bottom:calc(15px + env(safe-area-inset-bottom,0px))}
+    .export-sheet{max-width:660px;width:100%;max-height:94dvh;min-height:0;display:flex;flex-direction:column;
+      background:var(--surface);color:var(--text);padding:17px;border-radius:23px;box-shadow:0 28px 80px rgba(0,0,0,.26)}
+    .export-sheet-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;padding:5px 2px 14px}
+    .export-sheet-head h2{font-size:1.38rem;margin:2px 0}
+    .image-preview{min-height:120px;overflow:auto;background:var(--surface-sub);border:1px solid var(--line);
+      border-radius:14px;text-align:center}
+    .image-preview img{width:100%;max-height:57dvh;object-fit:contain;object-position:top center;display:block}
+    .export-controls{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
+    .export-controls .button{flex:1 1 160px;text-align:center;text-decoration:none;font-size:.92rem}
+    .export-help{color:var(--text-soft);font-size:.76rem;margin:12px 3px 2px}
+    @media(min-width:670px){.score-row{grid-template-columns:44px minmax(130px,1fr) 190px 115px}
+      .winner-button{min-height:50px}.joker-label{font-size:.78rem}}
+    @media(max-width:580px){.topbar{align-items:center}
+      .top-actions{width:100%;justify-content:flex-start}
+      .top-actions .button:not(.theme-toggle){flex:1 1 130px;font-size:.79rem;padding:9px 8px}
+      .theme-toggle{margin-left:auto}.intro .hero-sparkle{right:18px;top:45px;font-size:2.65rem}
+      .round-config{grid-template-columns:22px 62px minmax(0,1fr) 41px;gap:6px}
+    }
+    @media(max-width:370px){.app{padding-inline:max(10px,env(safe-area-inset-left,0px))}
+      .score-row{grid-template-columns:40px minmax(0,1fr) 74px;gap:4px 6px}
+      .winner-button{width:40px}.step{width:30px;min-width:30px;height:37px}
+      .score-name{font-size:.82rem}.result-row,.result-labels{grid-template-columns:26px minmax(0,1fr) 76px 60px;gap:4px}
+      .result-points{font-size:1.04rem}.round-config .input{font-size:14px}
+      .intro{padding:22px 19px}.intro .hero-sparkle{font-size:2rem;right:12px;top:59px}
+    }
+    @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+
+    /* ================ REMI PREMIUM · BARALHO POSTER ================
+       Modo claro inspirado em cartazes de baralho (papel/preto/vermelho).
+       Modo escuro inspirado em baralho premium (preto/carmim/dourado).
+       Todas as ilustrações são CSS, sem ficheiros de imagem adicionais. */
+    :root,html[data-theme="light"]{
+      color-scheme:light;
+      --felt:#f5f0e9;--felt-dark:#1b1415;--card:#fffdf8;--card-light:#f4eee5;
+      --ivory:#1c1718;--muted:#736b68;--gold:#c51e2d;
+      --gold-soft:rgba(197,30,45,.09);--red:#be1d2a;
+      --line:#e3d7ce;--ring:rgba(213,31,45,.28);
+      --page:#f5f0e9;--surface:#fffcf7;--surface-sub:#f6f0e9;
+      --text:#22191b;--text-soft:#716763;--purple:#c51e2d;
+      --purple-pale:#ffebe3;--accent:#28725a;--accent-pale:#e7f3ea;
+      --sun:#facd36;--sun-pale:#fff0c6;--danger:#b72531;
+      --danger-pale:#fff0ed;--shadow:0 9px 27px rgba(58,27,28,.07);
+      --sans:"DM Sans",system-ui,-apple-system,sans-serif;
+      --display:"Barlow Condensed",Impact,"Arial Narrow",sans-serif;
+    }
+    html[data-theme="dark"]{
+      color-scheme:dark;
+      --felt:#110d10;--felt-dark:#f3e8d5;--card:#25191d;--card-light:#302227;
+      --ivory:#fff7ed;--muted:#b9a8a6;--gold:#ff4b55;
+      --gold-soft:rgba(237,41,53,.17);--red:#ef4450;
+      --line:#49373b;--ring:rgba(255,210,55,.45);
+      --page:#110d10;--surface:#231a1d;--surface-sub:#302328;
+      --text:#fff8ee;--text-soft:#bcaeac;--purple:#ff4c56;
+      --purple-pale:#44242b;--accent:#ffd047;--accent-pale:#46351d;
+      --sun:#ffd047;--sun-pale:#4e3b23;--danger:#ff7580;
+      --danger-pale:#4b252d;--shadow:0 12px 34px rgba(0,0,0,.21);
+    }
+    body{
+      background:
+        radial-gradient(circle at 100% 0%,rgba(191,23,38,.12),transparent 40%),
+        repeating-linear-gradient(-24deg,transparent,transparent 43px,rgba(110,74,60,.018) 44px,transparent 45px),
+        var(--page);
+      color:var(--text);
+      font-family:var(--sans);
+    }
+    body::before{display:none}
+    .app{max-width:880px;padding-top:calc(17px + env(safe-area-inset-top,0px))}
+    h1,h2,h3{font-family:var(--display);font-weight:900;letter-spacing:.012em;text-transform:uppercase}
+    h1{font-size:clamp(1.7rem,6.7vw,2.15rem);line-height:1;letter-spacing:.012em}
+    h2{font-size:clamp(1.8rem,6.2vw,2.3rem);line-height:1.04}
+    h3{font-size:1.36rem;line-height:1.04}
+    .topbar{padding:5px 2px 16px;margin-bottom:17px;border-bottom:2px solid var(--line)}
+    .brand{gap:11px}
+    .brand-icon{
+      display:flex;flex-direction:column;gap:0;align-items:flex-start;justify-content:flex-start;
+      padding:6px 8px;width:43px;height:52px;border-radius:7px;transform:rotate(-9deg);
+      background:#b91c2a;color:#fff7ec;border:3px solid #fff1df;
+      box-shadow:4px 4px 0 #211719,0 7px 18px rgba(177,10,24,.2);
+      font-family:Georgia,serif;line-height:1;
+    }
+    .brand-icon span{font-size:13px;font-weight:900;line-height:1}
+    .brand-icon b{font-size:24px;margin-left:3px;margin-top:0;line-height:1}
+    .brand-subtitle{color:var(--text-soft);font-size:.59rem;letter-spacing:.13em;font-weight:900;margin-bottom:4px}
+    .brand-mark{color:var(--purple);font-size:.82em;margin-left:4px}
+    .button{border-radius:8px;background:var(--surface);border:1.5px solid var(--line);color:var(--text);box-shadow:2px 3px 0 rgba(29,14,15,.08);font-weight:800}
+    .button-primary,.button-primary:hover:not(:disabled){
+      border-color:#aa1725;color:#fffaf0;background:#c51e2d;
+      box-shadow:4px 5px 0 #301c21;font-family:var(--display);letter-spacing:.07em;font-size:1.25rem;font-weight:900;text-transform:uppercase;
+    }
+    .button-primary:hover:not(:disabled){background:#dd2b37}
+    .button-danger{background:var(--danger-pale);color:var(--danger);border-color:var(--line)}
+    .button-full{border-radius:9px;min-height:60px;font-size:1.6rem}
+    .button-text{color:var(--purple)}
+    .theme-toggle{
+      border:2px solid var(--line);color:var(--text);background:var(--surface);
+      border-radius:8px;box-shadow:3px 3px 0 rgba(12,7,8,.11);
+    }
+    .section{border:1.5px solid var(--line);border-radius:13px;background:var(--surface);box-shadow:var(--shadow)}
+    .section-title{gap:12px}
+    .section-title h3{font-size:1.7rem}
+    .eyebrow{font-size:.7rem;letter-spacing:.16em;color:var(--purple);font-weight:900}
+    .counter{
+      background:var(--sun);color:#20140f;border:2px solid #20140f;border-radius:6px;
+      padding:5px 9px;font-weight:900;transform:rotate(2deg);
+      box-shadow:2px 2px 0 #20140f;
+    }
+    .pill{border-radius:5px;font-size:.65rem;font-weight:900;text-transform:uppercase;letter-spacing:.045em}
+    .pill-done{background:#e2f2e8;color:#196340;border:1px solid #9ecbad}
+    .pill-pending{background:var(--sun-pale);color:var(--text);border:1px solid rgba(197,141,25,.35)}
+    html[data-theme="dark"] .pill-done{background:#254230;color:#bcffd9;border-color:#456f52}
+    .input{border-radius:7px;background:var(--surface-sub);border:1.5px solid var(--line);color:var(--text)}
+    .input:focus{border-color:var(--purple);box-shadow:0 0 0 3px var(--ring)}
+    .input:disabled{background:var(--sun-pale);color:var(--text);-webkit-text-fill-color:var(--text);border-color:var(--line)}
+    .player-number{
+      border-radius:5px;transform:rotate(-4deg);background:#c7202e;color:white;
+      font:900 1.15rem/1 var(--display);width:32px;height:34px;
+    }
+    .icon-button{background:var(--surface-sub);border-radius:7px;border:1.5px solid var(--line)}
+    .icon-button-remove{color:var(--danger);background:var(--danger-pale)}
+    .intro{
+      position:relative;isolation:isolate;display:flex;overflow:hidden;
+      min-height:253px;border-radius:11px;padding:20px 21px 21px;
+      color:#211819;border:2px solid #211719;
+      background:
+        linear-gradient(132deg,transparent 0 54%,rgba(229,42,49,.07) 54% 56%,transparent 56%),
+        radial-gradient(circle at 103% 5%,rgba(247,201,60,.22),transparent 44%),
+        #fffbf2;
+      box-shadow:5px 6px 0 #271b1d;
+    }
+    html[data-theme="dark"] .intro{
+      color:#fff6eb;
+      border-color:#684046;
+      background:
+        radial-gradient(ellipse at 100% 50%,rgba(198,21,34,.24),transparent 62%),
+        linear-gradient(135deg,#25161b 0%,#120c0e 80%);
+      box-shadow:5px 6px 0 #6d1c26;
+    }
+    .intro::before{
+      z-index:-1;content:"";position:absolute;border-radius:0;background:rgba(25,20,19,.035);
+      width:230px;height:270px;transform:rotate(35deg);right:15%;top:-70px;
+    }
+    .intro::after{
+      z-index:-1;content:"";position:absolute;border-radius:0;
+      width:56%;height:8px;background:#d52d32;opacity:.9;right:-4%;bottom:30px;
+      transform:rotate(-13deg);
+    }
+    .hero-copy{position:relative;z-index:3;width:min(68%,390px);display:flex;flex-direction:column;align-items:flex-start}
+    .hero-kicker{
+      display:inline-block;background:#201619;color:#ffdf4e;
+      padding:5px 9px;font:900 .68rem/1.3 var(--sans);letter-spacing:.08em;transform:rotate(-2deg);
+      margin-bottom:12px;
+    }
+    .intro h2{
+      font:900 clamp(3.05rem,9.5vw,5.7rem)/.79 var(--display);
+      letter-spacing:-.02em;color:inherit;text-transform:uppercase;margin:1px 0 15px;
+      text-shadow:1px 1px 0 rgba(0,0,0,.06);
+    }
+    .intro h2 em{font-style:normal;color:#c7222e}
+    html[data-theme="dark"] .intro h2 em{color:#ff4b51}
+    .hero-desc{font-size:clamp(.75rem,2.4vw,.93rem);line-height:1.4;max-width:27ch;color:inherit;font-weight:750}
+    .hero-floor{position:absolute;right:17px;bottom:5px;color:#ac2730;font-size:1.15rem;letter-spacing:.38em;z-index:5}
+    .hero-deck{position:absolute;right:3%;top:30px;width:150px;height:204px;z-index:2;transform:rotate(5deg)}
+    .hero-playing-card{
+      position:absolute;top:36px;left:24px;width:100px;height:147px;
+      border-radius:10px;border:6px solid #fff9eb;background:#be1d2b;
+      box-shadow:0 12px 13px rgba(0,0,0,.24),inset 0 0 0 3px rgba(255,255,255,.14);
+      display:flex;justify-content:center;align-items:center;
+      font:900 4rem/1 Georgia,serif;
+    }
+    .card-back{transform:translate(-42px,5px) rotate(-19deg);background:
+       repeating-linear-gradient(45deg,rgba(255,255,255,.08) 0 3px,transparent 3px 8px),#b81a29;color:#f9d148}
+    .card-mid{transform:translate(8px,-4px) rotate(17deg);background:#211417;color:#f4d249}
+    .card-front{transform:translate(-12px,8px) rotate(-1deg);background:#fdf8eb;color:#b91926;border-color:#e8dfd2}
+    .card-front small{position:absolute;left:6px;top:6px;font:900 1.2rem/.85 Georgia,serif;text-align:center}
+    .card-front span{font-size:4rem}
+    .hero-sticker{
+      position:absolute;z-index:5;right:-8px;top:-8px;
+      display:grid;place-content:center;width:74px;height:74px;transform:rotate(13deg);
+      border-radius:50%;background:#ffd23e;border:3px solid #1b1514;
+      box-shadow:3px 4px 0 #241419;
+      text-align:center;font:900 1.18rem/.86 var(--display);color:#241518;
+    }
+    .intro-game{min-height:203px}
+    .intro-game h2{font-size:clamp(2.75rem,8.2vw,4.8rem);margin-bottom:17px}
+    .intro-game .hero-deck{top:10px;transform:scale(.77) rotate(5deg);transform-origin:top right}
+    .intro-game .hero-floor{bottom:7px}
+    .intro-game .hero-desc{max-width:30ch}
+    .callout{background:var(--sun-pale);border-radius:9px;border:1.5px dashed #bd902d;color:var(--text)}
+    html[data-theme="dark"] .callout{border-color:#8b6930}
+    .rounds-detail{border-radius:13px}
+    .rounds-detail>summary::after{color:var(--purple)}
+    .round-index{color:var(--purple);font-family:var(--display);font-size:1.25rem}
+    .board-label{margin-top:27px}
+    .board-label h2{font-size:2rem}
+    .leaders{gap:10px;padding-bottom:17px}
+    .leader-chip{
+      flex-basis:131px;min-height:96px;border-radius:9px;border:1.5px solid var(--line);
+      background:var(--surface);padding:13px 13px 10px;
+      box-shadow:3px 4px 0 rgba(20,12,12,.13);
+      border-top:5px solid #c8202d;
+    }
+    .leader-chip.is-leader{
+      background:#ffd33e;color:#211614;border-color:#241517;
+      border-top:5px solid #c8202d;box-shadow:4px 5px 0 #25191b;
+    }
+    .leader-chip.is-leader::after{content:"♠";font-size:74px;color:#ae2b2d;opacity:.14;right:3px;bottom:-21px}
+    .leader-chip.is-leader .leader-score,.leader-chip.is-leader .trophy{color:#221819}
+    .leader-chip.is-leader .score-unit{color:#62441f}
+    .leader-score{font:900 2rem/1 var(--display);letter-spacing:-.01em}
+    .leader-name{font-weight:900;text-transform:uppercase;font-size:.73rem;letter-spacing:.025em}
+    .progress-track{border-radius:3px;background:var(--surface-sub);height:7px;border:1px solid var(--line)}
+    .progress-fill{border-radius:1px;background:linear-gradient(90deg,#c41828,#ffc639)}
+    .round-card{padding:0;border-radius:13px;overflow:hidden}
+    .round-header{
+      position:relative;padding:15px 14px;
+      background:linear-gradient(100deg,var(--surface) 0 90%,var(--purple-pale));
+      border-bottom:2px solid var(--line);
+    }
+    .round-medallion{
+      border-radius:5px;background:#bf1e2d;color:#fff7ed;transform:rotate(-5deg);
+      width:44px;height:44px;font:900 1.75rem/1 var(--display);
+      box-shadow:3px 3px 0 #28171b;
+    }
+    .round-header h3{font-size:1.33rem}
+    .round-header h3 .subtle{font:800 .72rem var(--sans);letter-spacing:0;text-transform:none}
+    .round-contract{color:var(--text-soft);font-weight:750;font-size:.81rem}
+    .round-players{padding:9px 8px}
+    .score-row{border-radius:6px;padding:9px 6px;gap:4px 8px}
+    .score-row:nth-child(even){background:var(--surface-sub)}
+    .winner-button{
+      background:var(--surface);border:1.5px solid var(--line);
+      border-radius:7px;font-size:1.5rem;color:var(--text-soft)
+    }
+    .winner-button.selected{
+      background:#ffd342;color:#221719;border:2px solid #322019;
+      box-shadow:3px 3px 0 #b7242c;
+    }
+    .score-name{font-weight:900;font-size:.89rem}
+    .joker-label{font-weight:750}
+    .step{border-radius:6px;height:40px;min-width:35px;width:35px;font-weight:900}
+    .step-plus{background:#cf2533;color:#fffdf8;border-color:#ae1d2a}
+    .joker-count{font-weight:900}
+    .points-input{border-radius:6px;background:var(--surface);font-weight:900}
+    .round-footer .ok{color:var(--accent)}
+    .results{
+      margin-top:26px;border:2px solid var(--line);border-top:7px solid var(--purple);
+      background:var(--surface);border-radius:12px;
+    }
+    .results .section-title h2{font-size:2rem}
+    .result-labels{font-weight:800;text-transform:uppercase;font-size:.67rem}
+    .result-row{min-height:63px}
+    .result-row:first-child{background:var(--sun-pale);border-radius:5px 5px 0 0}
+    .place{font-family:var(--display);font-size:1.37rem}
+    .place.first{color:var(--purple)}
+    .result-name{font-weight:900}
+    .result-points{font:900 1.45rem/1 var(--display)}
+    .result-jokers{font-weight:800}
+    .summary-note{line-height:1.65}
+    .export-call{
+      background:linear-gradient(125deg,#231417,#551920);color:#fff5e8;
+      border-radius:10px;border:1px solid #99212d;
+      padding:17px 15px;gap:16px;
+    }
+    .export-call strong{font-family:var(--display);font-size:1.5rem;line-height:1.1;letter-spacing:.03em}
+    .export-call small{color:#f3c8c2}
+    .export-call .button-primary{
+      background:#ffd33f;border-color:#ffd33f;color:#261719;
+      box-shadow:3px 3px 0 #111;
+      font-size:1.1rem;
+    }
+    .export-overlay{background:rgba(13,8,10,.84)}
+    .export-sheet{border-radius:11px;border:2px solid var(--line)}
+    .export-sheet-head h2{font-size:2rem}
+    .image-preview{border-radius:6px}
+    @media(min-width:670px){
+      .hero-deck{right:9%;transform:scale(1.13) rotate(5deg)}
+      .intro-game .hero-deck{transform:scale(.95) rotate(5deg)}
+      .intro{padding:24px 35px 30px}
+      .hero-copy{width:65%}
+      .score-row{grid-template-columns:44px minmax(130px,1fr) 190px 115px}
+    }
+    @media(max-width:580px){
+      .topbar{gap:9px}
+      .top-actions{gap:8px}
+      .top-actions .button:not(.theme-toggle){flex:1 1 128px}
+      .hero-deck{right:2px;top:42px;transform:scale(.80) rotate(5deg);transform-origin:center right}
+      .hero-copy{width:72%}
+      .intro h2{font-size:clamp(2.65rem,11vw,4.5rem)}
+      .intro-game h2{font-size:clamp(2.6rem,10.3vw,3.9rem)}
+      .hero-sticker{right:22px;top:-12px}
+      .intro{min-height:249px}
+      .intro-game{min-height:202px}
+      .intro-game .hero-deck{top:8px;right:-8px;transform:scale(.65) rotate(5deg);transform-origin:center right}
+      .hero-desc{max-width:22ch}
+    }
+    @media(max-width:370px){
+      .brand-subtitle{font-size:.52rem}
+      .brand-icon{width:36px;height:47px;padding:6px}
+      .intro{padding:18px 15px;min-height:235px}
+      .intro h2{font-size:2.61rem}
+      .intro-game h2{font-size:2.46rem}
+      .hero-copy{width:75%}
+      .hero-deck{right:0px;transform:scale(.66) rotate(5deg)}
+      .intro-game .hero-deck{transform:scale(.59) rotate(5deg);right:-22px}
+      .hero-desc{font-size:.73rem}
+      .result-row,.result-labels{grid-template-columns:25px minmax(0,1fr) 76px 62px}
+      .step{min-width:32px;width:32px}
+    }
+
+
+    /* Arquivo de partidas e cópias de segurança */
+    .history-actions{display:flex;flex-wrap:wrap;gap:9px;margin:16px 0}
+    .history-actions .button{flex:1 1 155px}
+    .history-entry{border:1.5px solid var(--line);border-left:5px solid var(--purple);border-radius:12px;margin:12px 0;padding:15px;background:var(--surface)}
+    .history-top{display:flex;align-items:start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .history-top h3{font-size:1.45rem}
+    .history-top small{color:var(--text-soft);font-weight:700}
+    .history-standings{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+    .history-score{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--surface-sub);font-size:.86rem;font-weight:850}
+    .history-score strong{color:var(--purple);font-size:1.1rem}
+    .history-table{width:100%;border-collapse:collapse;margin-top:10px;font-size:.83rem;table-layout:fixed}
+    .history-table th,.history-table td{border-bottom:1px solid var(--line);padding:7px 5px;text-align:center;overflow-wrap:anywhere}
+    .history-table th:first-child,.history-table td:first-child{text-align:left;width:31%}
+    .history-buttons{display:flex;flex-wrap:wrap;gap:7px;margin-top:15px}
+    .history-buttons button{flex:1 1 140px}
+    .history-empty{text-align:center;padding:30px 12px;color:var(--text-soft)}
+    .storage-notice.storage-error{color:#dc323b}
+    .button-danger{color:var(--purple);border-color:var(--purple)}
+    .history-notice{font-size:.88rem;color:var(--text-soft);line-height:1.55;margin-top:10px}
+    .history-badge{display:inline-block;border-radius:30px;padding:3px 9px;background:var(--sun-pale);color:var(--text);font-size:.75rem;font-weight:850}
+    .brand:focus-visible{outline:2px solid var(--purple)}
+
+  </style>
+</head>
+<body>
+  <main class="app" id="app" aria-label="Marcador de Remi"></main>
+  <input type="file" accept="application/json,.json" id="backupFile" hidden aria-label="Importar cópia de segurança do Remi">
+  <div id="exportOverlay" class="export-overlay" hidden role="presentation">
+    <section class="export-sheet" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+      <div class="export-sheet-head">
+        <div><div class="eyebrow">BARALHO · RESULTADOS</div><h2 id="exportTitle">O CARTAZ DA PARTIDA</h2>
+          <p class="subtle">Todas as rondas, pontuação final e jokers num só ficheiro.</p></div>
+        <button type="button" class="icon-button" id="closeExport" aria-label="Fechar pré-visualização">×</button>
+      </div>
+      <div class="image-preview"><img id="exportPreview" alt="Imagem com todas as rondas, a classificação e os jokers" /></div>
+      <div class="export-controls">
+        <a id="saveExport" class="button button-primary" href="#" download="remi-resultados.png">↓ Guardar PNG</a>
+        <button type="button" id="shareExport" class="button">↗ Partilhar</button>
+      </div>
+      <p class="export-help">No iPhone, também podes tocar em <strong>Partilhar</strong> e escolher «Guardar imagem».</p>
+    </section>
+  </div>
+  <script>
+  (() => {
+    'use strict';
+
+    // Regra de pontuação: cada perdedor recebe o negativo dos pontos que ficaram na mão;
+    // o vencedor recebe, em positivo, a soma das penalizações de todos os perdedores.
+    const STORAGE_KEY = 'remi-contratos-pontuacoes-v1'; // legado: recuperar partidas da versão anterior
+    const LIBRARY_KEY = 'remi-premium-biblioteca-v1'; // dados atuais + histórico, numa gravação atómica
+    const PRESET_ROUNDS = [
+      [7, '2 trios'],
+      [8, '1 trio + 1 sequência'],
+      [9, '2 sequências'],
+      [10, '3 trios'],
+      [11, '2 trios + 1 sequência'],
+      [12, '1 trio + 2 sequências'],
+      [13, '3 sequências']
+    ];
+    const app = document.getElementById('app');
+    const ui = {roundsExpanded: false, storageError: false, view: 'current'};
+    const makeId = () => 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+    const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+
+    function defaultState() {
+      return {
+        phase: 'setup',
+        players: [
+          {id: makeId(), name: 'Jogador 1'},
+          {id: makeId(), name: 'Jogador 2'}
+        ],
+        rounds: PRESET_ROUNDS.map(([cards, contract]) => ({
+          id: makeId(), cards, contract, winner: null,
+          scores: {}, jokers: {}, previousScores: {}
+        }))
+      };
+    }
+
+    // Validação de ficheiros importados, dados anteriores e snapshots guardados.
+    function normalizeState(source) {
+      if (!source || !Array.isArray(source.players) || !Array.isArray(source.rounds)) return null;
+      if (source.players.length < 2 || source.players.length > 5 || !source.rounds.length || source.rounds.length > 100) return null;
+      const players = source.players.map(p => ({id: String(p?.id || makeId()), name: String(p?.name ?? '').slice(0,45)}));
+      if (new Set(players.map(p=>p.id)).size !== players.length) return null;
+      const rounds = source.rounds.map(r => {
+        const scores={}, jokers={}, previousScores={};
+        for (const {id} of players) {
+          const value=r?.scores?.[id];
+          scores[id]=Number.isSafeInteger(value) && value>=0 ? value : null;
+          const count=r?.jokers?.[id];
+          jokers[id]=Number.isSafeInteger(count) && count>=0 ? Math.min(count,999) : 0;
+          const prev=r?.previousScores?.[id];
+          if (prev===null || (Number.isSafeInteger(prev) && prev>=0)) previousScores[id]=prev;
+        }
+        const winner=players.some(p=>p.id===r?.winner) ? r.winner : null;
+        if (winner) scores[winner]=0;
+        return {id:String(r?.id||makeId()),cards:Number.isInteger(r?.cards)&&r.cards>=1&&r.cards<=99?r.cards:null,
+          contract:String(r?.contract??'').slice(0,100),winner,scores,jokers,previousScores};
+      });
+      if (new Set(rounds.map(r=>r.id)).size !== rounds.length) return null;
+      return {phase:source.phase==='game'?'game':'setup',players,rounds};
+    }
+    function loadLibrary() {
+      try {
+        const currentData=localStorage.getItem(LIBRARY_KEY);
+        if (currentData) {
+          const data=JSON.parse(currentData);
+          const current=normalizeState(data?.current);
+          if (!current || !Array.isArray(data?.history)) throw new Error('Dados inválidos na biblioteca');
+          const history=data.history.slice(0,500).map(x=>({
+            id:String(x.id||makeId()),savedAt:String(x.savedAt||new Date().toISOString()),
+            game:normalizeState(x.game)
+          })).filter(x=>x.game);
+          return {current,history};
+        }
+        // Migração no MESMO domínio/browser sem apagar o ficheiro legado.
+        const legacy=localStorage.getItem(STORAGE_KEY);
+        const old=legacy ? normalizeState(JSON.parse(legacy)) : null;
+        if (old) return {current:old,history:[]};
+      }catch(error){
+        console.warn('Não foi possível recuperar a partida:',error);
+        ui.storageError=true;
+      }
+      return {current:defaultState(),history:[]};
+    }
+    const loaded=loadLibrary();
+    let state=loaded.current;
+    let history=loaded.history;
+    function save() {
+      try {
+        localStorage.setItem(LIBRARY_KEY,JSON.stringify({version:1,current:state,history}));
+        ui.storageError=false;
+      }catch(error){
+        console.error('Erro ao guardar:',error);
+        ui.storageError=true;
+      }
+      updateStorageNotice();
+      return !ui.storageError;
+    }
+    function hasProgress(game) {
+      return game.phase==='game' && game.rounds.some(r=> r.winner || Object.values(r.scores).some(n=>Number.isSafeInteger(n)) || Object.values(r.jokers).some(n=>n>0));
+    }
+    function archiveCurrentGame() {
+      if (!hasProgress(state)) return true;
+      const item={id:makeId(),savedAt:new Date().toISOString(),game:structuredCloneSafe(state)};
+      history.unshift(item);
+      if (!save()) { history.shift(); return false; }
+      return true;
+    }
+    function structuredCloneSafe(data) {return JSON.parse(JSON.stringify(data));}
+    function completedFor(game,round){return !!round.winner && game.players.every(p=>p.id===round.winner || (Number.isSafeInteger(round.scores[p.id])&&round.scores[p.id]>=0));}
+    function contributionFor(game,r,id){
+      if(r.winner===id) return game.players.reduce((sum,p)=>sum+(p.id===id?0:(Number.isSafeInteger(r.scores[p.id])?r.scores[p.id]:0)),0);
+      return Number.isSafeInteger(r.scores[id])?-r.scores[id]:0;
+    }
+    function standingsFor(game){
+      return game.players.map((p,i)=>({...p,order:i,
+        total:game.rounds.reduce((sum,r)=>sum+contributionFor(game,r,p.id),0),
+        jokers:game.rounds.reduce((sum,r)=>sum+(r.jokers[p.id]||0),0)}))
+      .sort((a,b)=>b.total-a.total||a.order-b.order);
+    }
+    function escapeHTML(text) {
+      return String(text).replace(/[&<>"']/g, c => ({
+        '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+      })[c]);
+    }
+    function formatInt(value) { return new Intl.NumberFormat('pt-PT').format(value); }
+    function formatTotal(value) { return value === 0 ? '0' : value < 0 ? '−' + formatInt(Math.abs(value)) : formatInt(value); }
+    function playerById(id) { return state.players.find(p => p.id === id); }
+    function roundById(id) { return state.rounds.find(r => r.id === id); }
+    function scoreOf(r, id) {
+      if (r.winner === id) return 0;
+      const value = r.scores[id];
+      return Number.isSafeInteger(value) && value >= 0 ? value : null;
+    }
+    function isRoundComplete(r) {
+      return !!r.winner && state.players.every(p => scoreOf(r, p.id) !== null);
+    }
+    function roundContribution(r, id) {
+      // Campos ainda vazios não contam para os totais provisórios.
+      if (r.winner === id) {
+        return state.players.reduce((sum, p) => {
+          if (p.id === id) return sum;
+          const value = scoreOf(r, p.id);
+          return sum + (value ?? 0);
+        }, 0);
+      }
+      const value = scoreOf(r, id);
+      return value === null ? 0 : -value;
+    }
+    function standings() {
+      return state.players.map((player, index) => ({
+        ...player, order: index,
+        total: state.rounds.reduce((sum, r) => sum + roundContribution(r, player.id), 0),
+        jokers: state.rounds.reduce((sum, r) => sum + (r.jokers[player.id] ?? 0), 0)
+      })).sort((a, b) => b.total - a.total || a.order - b.order);
+    }
+    function setupValidation() {
+      const names = state.players.map(p => p.name.trim());
+      if (names.some(n => !n)) return 'Preenche o nome de todos os jogadores.';
+      if (new Set(names.map(n => n.toLocaleLowerCase('pt-PT'))).size !== names.length) return 'Usa nomes diferentes para os jogadores.';
+      if (!state.rounds.length) return 'Adiciona pelo menos uma ronda.';
+      if (state.rounds.some(r => !Number.isSafeInteger(r.cards) || r.cards < 1 || r.cards > 99 || !r.contract.trim()))
+        return 'Preenche as cartas (1–99) e a combinação de todas as rondas.';
+      return '';
+    }
+    function storageLabel() {
+      return ui.storageError
+        ? '⚠ Não foi possível guardar. Exporta uma cópia e verifica as permissões do navegador.'
+        : '✓ Guardado neste navegador após cada alteração. Faz cópias de segurança de vez em quando.';
+    }
+    function updateStorageNotice() {
+      const note = document.querySelector('[data-storage-note]');
+      if (note) {
+        note.textContent = storageLabel();
+        note.classList.toggle('storage-error', ui.storageError);
+      }
+    }
+    // Tema visual independente dos dados da partida.
+    const THEME_KEY = 'remi-tema-v2';
+    function readTheme() {
+      try {
+        const value = localStorage.getItem(THEME_KEY);
+        if (value === 'dark' || value === 'light') return value;
+      } catch (_error) {}
+      return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    let theme = readTheme();
+    function applyTheme() {
+      document.documentElement.dataset.theme = theme;
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#110d10' : '#f5f0e9';
+      const toggle = document.querySelector('[data-action="toggle-theme"]');
+      if (toggle) {
+        toggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+        toggle.title = theme === 'dark' ? 'Ativar modo claro' : 'Ativar modo escuro';
+        toggle.setAttribute('aria-label', toggle.title);
+        toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
+    }
+    function toggleTheme() {
+      theme = theme === 'dark' ? 'light' : 'dark';
+      try { localStorage.setItem(THEME_KEY, theme); } catch (_error) {}
+      applyTheme();
+    }
+    applyTheme();
+
+    function header() {
+      const game = state.phase === 'game';
+      return `<header class="topbar">
+        <div class="brand"><div class="brand-icon" aria-hidden="true"><span>A</span><b>♥</b></div>
+          <div><div class="brand-subtitle">♠ O teu marcador de cartas ♦</div><h1>REMI<span class="brand-mark">PREMIUM</span></h1></div>
+        </div>
+        <nav class="top-actions" aria-label="Ações da aplicação">
+          ${ui.view==='history' ? `<button class="button button-primary" type="button" data-action="back-history">← Voltar</button>` : `
+          <button class="button" type="button" data-action="open-history">▤ Histórico (${history.length})</button>
+          ${game ? `<button class="button" type="button" data-action="clear-scores">↺ Limpar pontos</button>
+           <button class="button button-danger" type="button" data-action="new-game">Novo jogo</button>` : ''}`}
+          <button type="button" class="button theme-toggle" data-action="toggle-theme" title="Alternar tema" aria-label="Alternar tema">◐</button>
+        </nav>
+      </header>`;
+    }
+    function heroArt(top, bottom) {
+      return `<div class="hero-deck" aria-hidden="true">
+        <div class="hero-playing-card card-back"><span>♠</span></div>
+        <div class="hero-playing-card card-mid"><span>♦</span></div>
+        <div class="hero-playing-card card-front"><small>A<br>♥</small><span>♥</span></div>
+        <div class="hero-sticker">${top}<br>${bottom}</div>
+      </div>`;
+    }
+    function setupTemplate() {
+      const error = setupValidation();
+      const filled = state.players.filter(p => p.name.trim()).length;
+      return `${header()}
+        <div class="intro intro-setup">
+          <div class="hero-copy">
+            <span class="hero-kicker">♠ &nbsp; O JOGO COMEÇA AQUI &nbsp; ♦</span>
+            <h2>BARALHA.<br><em>JOGA.</em><br>GANHA.</h2>
+            <p class="hero-desc">A mesa é tua. Junta a malta e deixa os pontos por nossa conta.</p>
+          </div>
+          ${heroArt('VAMOS', 'JOGAR!')}
+          <div class="hero-floor" aria-hidden="true">♥ &nbsp; ♠ &nbsp; ♦ &nbsp; ♣</div>
+        </div>
+        <section class="section" aria-labelledby="players-title">
+          <div class="section-title">
+            <h3 id="players-title">Jogadores</h3>
+            <span class="counter" data-player-count>${filled}/5 jogadores</span>
+          </div>
+          <div data-player-config>
+          ${state.players.map((p, i) => `<div class="player-config">
+            <span class="player-number">${i+1}</span>
+            <label class="sr-only" for="player-${escapeHTML(p.id)}">Nome do jogador ${i+1}</label>
+            <input class="input" id="player-${escapeHTML(p.id)}" type="text" maxlength="45" autocomplete="off"
+              placeholder="Nome do jogador" data-field="player-name" data-player-id="${escapeHTML(p.id)}"
+              value="${escapeHTML(p.name)}">
+            <button type="button" class="icon-button icon-button-remove" data-action="remove-player" data-player-id="${escapeHTML(p.id)}"
+              ${state.players.length <= 2 ? 'disabled' : ''} aria-label="Remover ${escapeHTML(p.name || 'jogador '+(i+1))}">×</button>
+          </div>`).join('')}
+          </div>
+          <div class="section-foot">
+            <button type="button" class="button" data-action="add-player" ${state.players.length >= 5 ? 'disabled' : ''}>＋ Adicionar jogador</button>
+            <span class="hint">Mínimo 2 · Máximo 5</span>
+          </div>
+        </section>
+        <details class="section rounds-detail" data-rounds-details ${ui.roundsExpanded ? 'open' : ''}>
+          <summary>
+            <span><span class="eyebrow" style="display:block;margin-bottom:4px">Opcional</span><strong>Editar rondas</strong>
+              <span class="subtle" style="display:block">${state.rounds.length} rondas configuradas</span></span>
+          </summary>
+          <div class="rounds-detail-content">
+            <p class="hint">Altera as cartas ou as combinações antes de começar. Também podes adicionar ou remover rondas.</p>
+            ${state.rounds.map((r, i) => `<div class="round-config">
+              <span class="round-index">${i+1}.</span>
+              <label><span class="field-label">Cartas</span>
+                <input class="input" type="number" min="1" max="99" step="1" inputmode="numeric"
+                  aria-label="Cartas da ronda ${i+1}" data-field="round-cards" data-round-id="${escapeHTML(r.id)}" value="${escapeHTML(r.cards)}"></label>
+              <label><span class="field-label">Combinação</span>
+                <input class="input" type="text" maxlength="100" autocomplete="off"
+                  aria-label="Combinação da ronda ${i+1}" data-field="round-contract" data-round-id="${escapeHTML(r.id)}" value="${escapeHTML(r.contract)}"></label>
+              <button type="button" class="icon-button icon-button-remove" data-action="remove-round"
+                data-round-id="${escapeHTML(r.id)}" aria-label="Remover ronda ${i+1}" ${state.rounds.length <= 1 ? 'disabled' : ''}>×</button>
+            </div>`).join('')}
+            <button type="button" class="button" data-action="add-round">＋ Adicionar ronda</button>
+          </div>
+        </details>
+        <div class="callout"><strong>Como se contam os pontos?</strong> Os perdedores recebem em negativo os pontos que lhes ficaram na mão. Quem fecha recebe, em positivo, a soma desses pontos. Ex.: três jogadores com 10 pontos → vencedor +30 e cada perdedor −10.</div>
+        <p class="validation" data-validation ${error ? '' : 'hidden'}>${escapeHTML(error)}</p>
+        <button class="button button-primary button-full" type="button" data-action="start" ${error ? 'disabled' : ''}>Começar jogo →</button>
+        <p class="storage-notice ${ui.storageError ? 'storage-error' : ''}" data-storage-note>${storageLabel()}</p>`;
+    }
+    function chipTemplate(sorted, index) {
+      const p = sorted[index];
+      const isLeader = p.total === sorted[0].total;
+      return `<div class="leader-chip ${isLeader ? 'is-leader' : ''}" title="${escapeHTML(p.name)}: ${formatTotal(p.total)} pontos">
+        <div class="leader-name">${isLeader ? '<span class="trophy" aria-label="Em primeiro lugar">🏆</span>' : ''}${escapeHTML(p.name)}</div>
+        <div class="leader-score">${formatTotal(p.total)} <span class="score-unit" style="font:600 .68rem var(--sans)">pts</span></div>
+      </div>`;
+    }
+    function roundTemplate(r, index) {
+      const done = isRoundComplete(r);
+      const missing = state.players.filter(p => scoreOf(r,p.id) === null).length;
+      const stateLabel = done ? 'Concluída' : r.winner ? `${missing} por preencher` : 'Por fechar';
+      return `<article class="section round-card" data-round-card="${escapeHTML(r.id)}" aria-label="Ronda ${index+1}">
+        <div class="round-header">
+          <div class="round-heading">
+            <div class="round-medallion">${index+1}</div>
+            <div><h3>Ronda ${index+1} <span class="subtle">· ${escapeHTML(r.cards)} cartas</span></h3>
+              <div class="round-contract">${escapeHTML(r.contract)}</div></div>
+          </div>
+          <span class="pill ${done?'pill-done':'pill-pending'}">${stateLabel}</span>
+        </div>
+        <div class="round-players">
+          ${state.players.map(p => {
+            const isWinner = r.winner === p.id;
+            const value = scoreOf(r,p.id);
+            const count = r.jokers[p.id] || 0;
+            return `<div class="score-row">
+              <button type="button" class="winner-button ${isWinner ? 'selected' : ''}"
+                data-action="winner" data-round-id="${escapeHTML(r.id)}" data-player-id="${escapeHTML(p.id)}"
+                aria-pressed="${isWinner}" aria-label="${isWinner?'Desmarcar':'Marcar'} ${escapeHTML(p.name)} como vencedor da ronda ${index+1}" title="${isWinner?'Vencedor da ronda':'Marcar como vencedor'}">
+                ${isWinner ? '🏆' : '♛'}
+              </button>
+              <div class="score-name" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
+              <div class="joker-controls" aria-label="Jokers de ${escapeHTML(p.name)} na ronda ${index+1}">
+                <span class="joker-label">Jokers</span><span class="joker-emoji" aria-hidden="true">🃏</span>
+                <button type="button" class="step" data-action="joker-minus" data-round-id="${escapeHTML(r.id)}"
+                  data-player-id="${escapeHTML(p.id)}" aria-label="Retirar joker de ${escapeHTML(p.name)} na ronda ${index+1}" ${count <= 0 ? 'disabled' : ''}>−</button>
+                <output class="joker-count" data-joker-count>${count}</output>
+                <button type="button" class="step step-plus" data-action="joker-plus" data-round-id="${escapeHTML(r.id)}"
+                  data-player-id="${escapeHTML(p.id)}" aria-label="Adicionar joker a ${escapeHTML(p.name)} na ronda ${index+1}" ${count >= 999 ? 'disabled' : ''}>+</button>
+              </div>
+              <div class="points-wrap">
+                <label class="points-label" for="score-${escapeHTML(r.id)}-${escapeHTML(p.id)}">Na mão</label>
+                <input class="input points-input" id="score-${escapeHTML(r.id)}-${escapeHTML(p.id)}" type="number"
+                  inputmode="numeric" min="0" step="1" placeholder="—" data-field="score"
+                  data-round-id="${escapeHTML(r.id)}" data-player-id="${escapeHTML(p.id)}"
+                  value="${value === null ? '' : value}" ${isWinner ? 'disabled' : ''}
+                  aria-label="Pontos de ${escapeHTML(p.name)} na ronda ${index+1}">
+                <div class="points-unit">pontos</div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="round-footer">${done ? `<span class="ok">✓ Ronda concluída · ${escapeHTML(playerById(r.winner)?.name || 'Vencedor')} recebe <strong>+${formatInt(roundContribution(r,r.winner))}</strong> pontos.</span>` :
+          r.winner ? `Introduz os pontos em falta (${missing}). O vencedor receberá a soma dos pontos dos restantes.` : 'Toca na coroa ♛ para marcar quem fechou a ronda.'}</div>
+      </article>`;
+    }
+    function resultsTemplate(sorted) {
+      const done = state.rounds.filter(isRoundComplete).length;
+      const allDone = done === state.rounds.length;
+      return `<section class="section results" aria-labelledby="results-title">
+        <div class="section-title">
+          <div><div class="eyebrow">${allDone ? 'Partida concluída' : 'Classificação provisória'}</div>
+          <h2 id="results-title">RESULTADOS FINAIS</h2></div>
+          <span class="pill ${allDone ? 'pill-done' : 'pill-pending'}">${done}/${state.rounds.length} rondas</span>
+        </div>
+        <div class="result-labels" aria-hidden="true"><span>Pos.</span><span>Jogador</span><span>Pontos</span><span>Jokers</span></div>
+        <div>
+          ${sorted.map((p,i) => {
+            const place = i > 0 && p.total === sorted[i-1].total ? sorted.findIndex(x => x.total === p.total) + 1 : i + 1;
+            return `<div class="result-row">
+              <span class="place ${place===1?'first':''}">${place===1?'🏆':place+'º'}</span>
+              <span class="result-name">${escapeHTML(p.name)}</span>
+              <strong class="result-points">${formatTotal(p.total)}</strong>
+              <span class="result-jokers">🃏 ${formatInt(p.jokers)}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <p class="summary-note"><strong>Regra:</strong> cada perdedor recebe em negativo os pontos que lhe sobraram na mão; o vencedor recebe em positivo a soma das penalizações dos restantes. Ganha quem acabar com o <strong>total mais alto</strong>. Os jokers não influenciam a classificação.
+        ${allDone ? '<br><br>✓ Todos os resultados foram registados. Em caso de empate, há jogadores classificados na mesma posição.' : '<br><br>Os totais são provisórios enquanto houver rondas por concluir. Campos vazios ainda não contam.'}</p>
+        <div class="export-call">
+          <div><strong>📸 O CARTAZ DA PARTIDA</strong><small>Uma imagem com todas as rondas e resultados.</small></div>
+          <button class="button button-primary" type="button" data-action="export-image">CRIAR IMAGEM ↗</button>
+        </div>
+      </section>`;
+    }
+    function gameTemplate() {
+      const sorted = standings();
+      const completed = state.rounds.filter(isRoundComplete).length;
+      return `${header()}
+        <div class="intro intro-game"><div class="hero-copy">
+          <span class="hero-kicker">♦ &nbsp; MESA ABERTA &nbsp; ♠</span>
+          <h2>QUE GANHE<br><em>O MELHOR.</em></h2>
+          <p class="hero-desc">Marca quem fechou. Somamos os pontos ao vencedor e descontamos aos restantes.</p></div>
+          ${heroArt('BOA', 'SORTE!')}
+          <div class="hero-floor" aria-hidden="true">♥ &nbsp; ♠ &nbsp; ♦ &nbsp; ♣</div>
+        </div>
+        <div class="board-label"><div><div class="eyebrow">Em tempo real · 🏆</div><h2>QUEM VAI À FRENTE?</h2></div>
+          <span class="counter">${completed}/${state.rounds.length} rondas</span></div>
+        <div class="leaders" data-leaders aria-label="Totais dos jogadores por ordem decrescente">${sorted.map((_,i) => chipTemplate(sorted,i)).join('')}</div>
+        <p class="board-meta">O vencedor de cada ronda recebe a soma dos pontos dos perdedores. Quem tiver o total mais alto está na frente.</p>
+        <div class="progress-line"><span>Progresso da partida</span><span data-progress-label>${completed} de ${state.rounds.length} concluídas</span></div>
+        <div class="progress-track" aria-hidden="true"><div class="progress-fill" data-progress-fill style="width:${100*completed/state.rounds.length}%"></div></div>
+        <div data-rounds-list>${state.rounds.map((r,i) => roundTemplate(r,i)).join('')}</div>
+        <div data-results>${resultsTemplate(sorted)}</div>
+        <p class="storage-notice ${ui.storageError?'storage-error':''}" data-storage-note>${storageLabel()}</p>`;
+    }
+
+    function historyTemplate() {
+      return `${header()}
+       <section class="section">
+        <div class="eyebrow">♠ AS PARTIDAS NÃO DESAPARECEM ♦</div>
+        <h2>HISTÓRICO DE JOGOS</h2>
+        <p class="subtle" style="margin-top:9px">Ao escolher «Novo jogo», a partida anterior fica aqui guardada, mesmo que não estivesse concluída.</p>
+        <div class="history-actions">
+          <button class="button button-primary" type="button" data-action="backup-export">↓ Descarregar cópia JSON</button>
+          <button class="button" type="button" data-action="backup-import">↑ Recuperar cópia JSON</button>
+        </div>
+        <p class="history-notice">A cópia JSON contém a partida atual e todo o histórico. Serve para recuperar os dados noutro telemóvel ou navegador. Guarda-a num local seguro. A imagem PNG continua disponível durante cada partida.</p>
+       </section>
+       ${history.length ? history.map((h,i)=>{
+         const game=h.game,rank=standingsFor(game),complete=game.rounds.filter(r=>completedFor(game,r)).length;
+         const date=new Date(h.savedAt);
+         const printed=Number.isNaN(date.getTime())?'Data desconhecida':date.toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'});
+         return `<article class="history-entry">
+           <div class="history-top"><div><div class="eyebrow">PARTIDA ${history.length-i}</div><h3>${escapeHTML(game.players.map(p=>p.name).join(' · '))}</h3>
+           <small>${escapeHTML(printed)} · ${complete}/${game.rounds.length} rondas concluídas</small></div><span class="history-badge">${complete===game.rounds.length?'✓ Concluída':'Em progresso'}</span></div>
+           <div class="history-standings">${rank.map((p,j)=>`<span class="history-score">${j===0?'🏆 ':''}${escapeHTML(p.name)} <strong>${formatTotal(p.total)}</strong> · 🃏${p.jokers}</span>`).join('')}</div>
+           <details style="margin-top:12px"><summary><strong>Ver resultados de todas as rondas</strong></summary>
+             <div style="overflow-x:auto"><table class="history-table"><thead><tr><th>Ronda</th>${game.players.map(p=>`<th>${escapeHTML(p.name)}</th>`).join('')}</tr></thead>
+               <tbody>${game.rounds.map((r,i)=>`<tr><th>${i+1}. ${escapeHTML(r.contract)}</th>${game.players.map(p=>`<td>${r.winner===p.id?'♛ ':''}${r.winner===p.id?'+':''}${formatTotal(contributionFor(game,r,p.id))}<br><small>🃏 ${r.jokers[p.id]||0}</small></td>`).join('')}</tr>`).join('')}</tbody>
+             </table></div></details>
+           <div class="history-buttons"><button class="button button-primary" type="button" data-action="restore-history" data-history-id="${escapeHTML(h.id)}">↗ Retomar esta partida</button>
+           <button class="button button-danger" type="button" data-action="delete-history" data-history-id="${escapeHTML(h.id)}">✕ Apagar do histórico</button></div>
+         </article>`;
+       }).join('') : '<div class="section history-empty">Ainda não há jogos anteriores. Quando começares um novo, o atual fica aqui guardado.</div>'}
+       <p class="storage-notice ${ui.storageError?'storage-error':''}" data-storage-note>${storageLabel()}</p>`;
+    }
+    function exportBackup() {
+      const contents=JSON.stringify({app:'remi-premium',version:1,exportedAt:new Date().toISOString(),current:state,history},null,2);
+      const blob=new Blob([contents],{type:'application/json'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='remi-copia-'+new Date().toISOString().slice(0,10)+'.json';
+      document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    }
+    async function importBackup(file){
+      if(!file)return;
+      if(file.size>8_000_000){alert('Cópia demasiado grande (máximo 8 MB).');return;}
+      try{
+        const data=JSON.parse(await file.text());
+        const current=normalizeState(data.current);
+        if(data.app!=='remi-premium'||!current||!Array.isArray(data.history)||data.history.length>500)throw new Error('Ficheiro inválido');
+        const imported=data.history.map(h=>({id:String(h.id||makeId()),savedAt:String(h.savedAt||new Date().toISOString()),game:normalizeState(h.game)}));
+        if(imported.some(h=>!h.game))throw new Error('Histórico incompleto');
+        if(!confirm(`Substituir a partida atual e o histórico pelos dados desta cópia (${imported.length} jogos guardados)?`))return;
+        const before=state,oldHistory=history;
+        state=current;history=imported;
+        if(!save()) {state=before;history=oldHistory;alert('Não foi possível gravar a cópia importada. Os dados anteriores foram mantidos.');return;}
+        ui.view='current';render();window.scrollTo(0,0);
+        alert('Cópia recuperada. A partida atual está pronta a continuar.');
+      }catch(err){console.error(err);alert('Este ficheiro não é uma cópia JSON válida do Remi Premium.');}
+    }
+    function render() {
+      app.innerHTML = ui.view==='history'?historyTemplate():(state.phase==='game'?gameTemplate():setupTemplate());
+      applyTheme();
+    }
+    function updateSetup() {
+      const count = document.querySelector('[data-player-count]');
+      if (count) count.textContent = `${state.players.filter(p => p.name.trim()).length}/5 jogadores`;
+      const error = setupValidation();
+      const msg = document.querySelector('[data-validation]');
+      if (msg) { msg.hidden = !error; msg.textContent = error; }
+      const start = document.querySelector('[data-action="start"]');
+      if (start) start.disabled = !!error;
+    }
+    function updateStandings() {
+      const sorted = standings();
+      const leaders = document.querySelector('[data-leaders]');
+      if (leaders) leaders.innerHTML = sorted.map((_,i) => chipTemplate(sorted,i)).join('');
+      const results = document.querySelector('[data-results]');
+      if (results) results.innerHTML = resultsTemplate(sorted);
+      const completed = state.rounds.filter(isRoundComplete).length;
+      const counter = document.querySelector('.board-label .counter');
+      if (counter) counter.textContent = `${completed}/${state.rounds.length} rondas`;
+      const label = document.querySelector('[data-progress-label]');
+      if (label) label.textContent = `${completed} de ${state.rounds.length} concluídas`;
+      const fill = document.querySelector('[data-progress-fill]');
+      if (fill) fill.style.width = `${100 * completed / state.rounds.length}%`;
+    }
+    function updateRound(r) {
+      const index = state.rounds.indexOf(r);
+      const node = [...document.querySelectorAll('[data-round-card]')].find(el => el.dataset.roundCard === r.id);
+      if (node) node.outerHTML = roundTemplate(r, index);
+      updateStandings();
+    }
+    function changeWinner(r, id) {
+      // Permite corrigir o vencedor sem perder uma penalização anteriormente escrita.
+      if (r.winner) {
+        const old = r.winner;
+        r.scores[old] = own(r.previousScores,old) ? r.previousScores[old] : null;
+        delete r.previousScores[old];
+      }
+      if (r.winner === id) {
+        r.winner = null;
+      } else {
+        r.previousScores[id] = scoreOf(r,id);
+        r.winner = id;
+        r.scores[id] = 0;
+      }
+    }
+
+
+    /* ================= IMAGEM DE RESULTADOS =================
+       Canvas nativo, sem bibliotecas nem ligações externas.
+       Inclui todas as rondas, penalizações negativas, vencedores,
+       jokers por ronda e totais finais. Aceita jogos ainda incompletos. */
+    const overlay = document.getElementById('exportOverlay');
+    const exportPreview = document.getElementById('exportPreview');
+    const saveExport = document.getElementById('saveExport');
+    const shareExport = document.getElementById('shareExport');
+    let reportBlob = null;
+    let reportURL = null;
+    let focusBeforeExport = null;
+
+    function rounded(c,x,y,w,h,r) {
+      r = Math.min(r,w/2,h/2);
+      c.beginPath(); c.moveTo(x+r,y);c.lineTo(x+w-r,y);
+      c.quadraticCurveTo(x+w,y,x+w,y+r);c.lineTo(x+w,y+h-r);
+      c.quadraticCurveTo(x+w,y+h,x+w-r,y+h);c.lineTo(x+r,y+h);
+      c.quadraticCurveTo(x,y+h,x,y+h-r);c.lineTo(x,y+r);
+      c.quadraticCurveTo(x,y,x+r,y);c.closePath();
+    }
+    function truncateCanvas(c,str,width) {
+      str=String(str);
+      if(c.measureText(str).width<=width)return str;
+      while(str.length>1 && c.measureText(str+'…').width>width)str=str.slice(0,-1);
+      return str+'…';
+    }
+    function createResultsCanvas() {
+      const rank = standings();
+      const done = state.rounds.filter(isRoundComplete).length;
+      const totalRounds = state.rounds.length;
+      const complete = done === totalRounds;
+      const W=1200, M=54, labelW=264;
+      const cols=state.players.length;
+      const CW=(W-2*M-labelW)/cols;
+      const headerY=245, headerH=94, rowH=67;
+      const resultY=headerY+headerH+totalRounds*rowH+56;
+      const H=resultY+164+rank.length*74+160;
+      const canvas=document.createElement('canvas');
+      canvas.width=W;canvas.height=H;
+      const c=canvas.getContext('2d');
+      if(!c)throw new Error('Canvas indisponível');
+      const ink='#22191b',muted='#736764',purple='#c51e2d',border='#e6dcd5';
+      c.fillStyle='#f3efe7';c.fillRect(0,0,W,H);
+      // Cabeçalho com identidade visual legível numa imagem partilhada.
+      const gradient=c.createLinearGradient(0,0,W,0);
+      gradient.addColorStop(0,'#1a1115');gradient.addColorStop(.67,'#301015');gradient.addColorStop(1,'#aa1927');
+      c.fillStyle=gradient;rounded(c,0,0,W,206,0);c.fill();
+      c.fillStyle='rgba(250,206,65,.12)';c.beginPath();c.arc(1120,40,150,0,Math.PI*2);c.fill();
+      c.fillStyle='#ffdc4a';c.font='900 70px Impact,Arial,sans-serif';c.fillText('REMI PREMIUM',M,87);
+      c.font='600 24px system-ui,-apple-system,sans-serif';
+      c.fillText(complete?'RESULTADOS FINAIS':'CLASSIFICAÇÃO PROVISÓRIA',M,133);
+      c.font='500 21px system-ui,-apple-system,sans-serif';
+      c.fillText(`${done}/${totalRounds} rondas concluídas   •   ${cols} jogadores   •   ${new Intl.DateTimeFormat('pt-PT',{day:'2-digit',month:'short',year:'numeric'}).format(new Date())}`,M,169);
+      c.fillStyle='#fffcf6';rounded(c,M,headerY,W-2*M,headerH+totalRounds*rowH,20);c.fill();
+      // Tabela ronda a ronda.
+      c.fillStyle='#ffe7c9';rounded(c,M,headerY,W-2*M,headerH,20);c.fill();
+      c.fillStyle=purple;c.textBaseline='middle';c.textAlign='left';
+      c.font='800 21px system-ui,-apple-system,sans-serif';c.fillText('RONDA / CONTRATO',M+18,headerY+48);
+      for(let j=0;j<cols;j++){
+        const p=state.players[j];const x=M+labelW+j*CW;
+        c.fillStyle=ink;c.textAlign='center';c.font='800 21px system-ui,-apple-system,sans-serif';
+        c.fillText(truncateCanvas(c,p.name,CW-19),x+CW/2,headerY+39);
+        c.fillStyle=muted;c.font='600 15px system-ui,-apple-system,sans-serif';
+        c.fillText('ronda / 🃏',x+CW/2,headerY+67);
+      }
+      state.rounds.forEach((r,i)=>{
+        const y=headerY+headerH+i*rowH;
+        if(i%2===1){c.fillStyle='#f5eee6';c.fillRect(M+1,y,W-2*M-2,rowH)}
+        c.strokeStyle=border;c.lineWidth=1;c.beginPath();c.moveTo(M,y);c.lineTo(W-M,y);c.stroke();
+        c.textAlign='left';c.textBaseline='middle';c.fillStyle=ink;
+        c.font='800 20px system-ui,-apple-system,sans-serif';c.fillText(`R${i+1}  ·  ${r.cards} cartas`,M+17,y+24);
+        c.font='500 16px system-ui,-apple-system,sans-serif';c.fillStyle=muted;
+        c.fillText(truncateCanvas(c,r.contract,labelW-34),M+17,y+48);
+        state.players.forEach((p,j)=>{
+          const x=M+labelW+j*CW+CW/2;
+          const val=scoreOf(r,p.id);
+          const win=r.winner===p.id;
+          const contribution=roundContribution(r,p.id);
+          if(win){c.fillStyle='#ffdb55';rounded(c,x-48,y+9,96,46,12);c.fill()}
+          c.textAlign='center';c.fillStyle=win?'#351a12':ink;
+          c.font='800 24px system-ui,-apple-system,sans-serif';
+          c.fillText(win?`+${contribution} ★`:val===null?'—':`−${val}`,x,y+26);
+          c.fillStyle=muted;c.font='600 16px system-ui,-apple-system,sans-serif';
+          c.fillText(`🃏 ${r.jokers[p.id]??0}`,x,y+50);
+        });
+      });
+      // Classificação final/provisória, ordenada por maior pontuação.
+      c.fillStyle=ink;c.textAlign='left';c.textBaseline='middle';
+      c.font='900 34px system-ui,-apple-system,sans-serif';c.fillText('🏆  Classificação geral',M,resultY+3);
+      c.fillStyle=muted;c.font='500 19px system-ui,-apple-system,sans-serif';
+      c.fillText(complete?'Todas as rondas fechadas.':'Há rondas por concluir — valores provisórios.',M,resultY+42);
+      const rankTop=resultY+77;
+      rank.forEach((p,i)=>{
+        const pos=rank.findIndex(x=>x.total===p.total)+1;
+        const y=rankTop+i*74;
+        c.fillStyle=pos===1?'#ffe19a':'#fffcf6';rounded(c,M,y,W-2*M,64,16);c.fill();
+        c.fillStyle=pos===1?purple:muted;c.textAlign='left';c.font='900 25px system-ui,-apple-system,sans-serif';
+        c.fillText(pos===1?'★':`${pos}.`,M+21,y+33);
+        c.fillStyle=ink;c.font='800 25px system-ui,-apple-system,sans-serif';
+        c.fillText(truncateCanvas(c,p.name,470),M+75,y+34);
+        c.textAlign='right';c.fillStyle=pos===1?purple:ink;c.font='900 27px system-ui,-apple-system,sans-serif';
+        c.fillText(`${formatTotal(p.total)} pts`,W-M-164,y+34);
+        c.fillStyle=muted;c.font='700 21px system-ui,-apple-system,sans-serif';
+        c.fillText(`🃏 ${p.jokers}`,W-M-22,y+34);
+      });
+      const foot=rankTop+rank.length*74+20;
+      c.textAlign='left';c.fillStyle=muted;c.font='500 20px system-ui,-apple-system,sans-serif';
+      c.fillText('O vencedor recebe a soma dos pontos dos perdedores; cada perdedor recebe a sua penalização em negativo.',M,foot+8);
+      c.font='700 20px system-ui,-apple-system,sans-serif';c.fillText('A soma líquida de cada ronda é 0. Ganha o total mais alto. Jokers = estatística.',M,foot+43);
+      c.fillStyle=purple;c.font='800 17px system-ui,-apple-system,sans-serif';
+      c.fillText('REMI PREMIUM  •  A CARTA É TUA.',M,foot+87);
+      return canvas;
+    }
+    async function generateResultsImage() {
+      const canvas=createResultsCanvas();
+      const blob=await new Promise((resolve,reject)=>{
+        try { canvas.toBlob(b=>b?resolve(b):reject(new Error('Erro ao criar PNG')),'image/png'); }
+        catch(e){reject(e)}
+      });
+      if(reportURL)URL.revokeObjectURL(reportURL);
+      reportURL=URL.createObjectURL(blob);
+      reportBlob=blob;
+      exportPreview.src=reportURL;
+      const stamp=new Date().toISOString().slice(0,10);
+      saveExport.download=`remi-resultados-${stamp}.png`;
+      saveExport.href=reportURL;
+      const filename=saveExport.download;
+      const file=new File([blob],filename,{type:'image/png'});
+      shareExport.hidden=!(navigator.share && navigator.canShare && navigator.canShare({files:[file]}));
+      focusBeforeExport=document.activeElement;
+      overlay.hidden=false;
+      document.body.style.overflow='hidden';
+      document.getElementById('closeExport').focus();
+    }
+    function closeResultsImage(){
+      overlay.hidden=true;document.body.style.overflow='';
+      if(focusBeforeExport?.isConnected)focusBeforeExport.focus();
+    }
+    document.getElementById('closeExport').addEventListener('click',closeResultsImage);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)closeResultsImage()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!overlay.hidden)closeResultsImage()});
+    shareExport.addEventListener('click',async()=>{
+      if(!reportBlob||!navigator.share)return;
+      try {
+        const file=new File([reportBlob],saveExport.download,{type:'image/png'});
+        await navigator.share({files:[file],title:'Resultados de Remi'});
+      }catch(err){if(err?.name!=='AbortError')alert('Não foi possível partilhar. Usa «Guardar PNG».')}
+    });
+
+    // Delegação de eventos: menos listeners, mesmo depois de atualizar cartões.
+    app.addEventListener('click', event => {
+      const btn = event.target.closest('button[data-action]');
+      if (!btn || btn.disabled) return;
+      const action = btn.dataset.action;
+      const id = btn.dataset.playerId;
+      const rid = btn.dataset.roundId;
+      const round = rid ? roundById(rid) : null;
+
+      if (action === 'toggle-theme') {
+        toggleTheme();
+      } else if (action === 'open-history') {
+        ui.view='history';render();window.scrollTo(0,0);
+      } else if (action === 'back-history') {
+        ui.view='current';render();window.scrollTo(0,0);
+      } else if (action === 'backup-export') {
+        exportBackup();
+      } else if (action === 'backup-import') {
+        document.getElementById('backupFile').click();
+      } else if (action === 'restore-history') {
+        const selected=history.find(h=>h.id===btn.dataset.historyId);
+        if (!selected || !confirm('Retomar esta partida? Se houver uma partida atual com pontos, será guardada no histórico.'))return;
+        if(!archiveCurrentGame()){alert('Não foi possível guardar a partida atual. Exporta primeiro uma cópia.');return;}
+        state=structuredCloneSafe(selected.game);
+        if(!save()){alert('Falha a gravar a partida recuperada.');return;}
+        ui.view='current';render();window.scrollTo(0,0);
+      } else if (action === 'delete-history') {
+        const index=history.findIndex(h=>h.id===btn.dataset.historyId);
+        if(index===-1||!confirm('Apagar definitivamente esta partida do histórico?'))return;
+        const item=history.splice(index,1)[0];
+        if(!save()){history.splice(index,0,item);alert('Não foi possível guardar a alteração.');return;}
+        render();
+      } else if (action === 'export-image') {
+        btn.disabled = true;
+        Promise.resolve().then(generateResultsImage).catch(err => {
+          console.error('Exportação:',err);
+          alert('Não foi possível criar a imagem neste dispositivo.');
+        }).finally(() => { if(btn.isConnected) btn.disabled=false; });
+      } else if (action === 'add-player') {
+        if (state.players.length >= 5) return;
+        state.players.push({id:makeId(),name:`Jogador ${state.players.length+1}`});
+        save(); render();
+      } else if (action === 'remove-player') {
+        if (state.players.length <= 2) return;
+        state.players = state.players.filter(p => p.id !== id);
+        save(); render();
+      } else if (action === 'add-round') {
+        if (state.rounds.length >= 100) return;
+        const last = state.rounds[state.rounds.length-1];
+        state.rounds.push({id:makeId(), cards:Math.min(99,(Number(last.cards)||7)+1), contract:'Nova combinação',winner:null,scores:{},jokers:{},previousScores:{}});
+        ui.roundsExpanded = true; save(); render();
+      } else if (action === 'remove-round') {
+        if (state.rounds.length <= 1) return;
+        state.rounds = state.rounds.filter(r => r.id !== rid);
+        ui.roundsExpanded = true; save(); render();
+      } else if (action === 'start') {
+        if (setupValidation() || state.players.length < 2 || state.players.length > 5) return;
+        state.phase = 'game'; save();
+        if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
+        render();window.scrollTo(0,0);
+      } else if (action === 'winner' && round && playerById(id)) {
+        changeWinner(round,id); save(); updateRound(round);
+      } else if ((action === 'joker-plus' || action === 'joker-minus') && round && playerById(id)) {
+        const delta = action === 'joker-plus' ? 1 : -1;
+        round.jokers[id] = Math.max(0,Math.min(999,(round.jokers[id]||0)+delta));
+        save();
+        const line = btn.closest('.score-row');
+        if (line) {
+          line.querySelector('[data-joker-count]').textContent = round.jokers[id];
+          line.querySelector('[data-action="joker-minus"]').disabled = round.jokers[id] === 0;
+          line.querySelector('[data-action="joker-plus"]').disabled = round.jokers[id] === 999;
+        }
+        updateStandings();
+      } else if (action === 'clear-scores') {
+        if (!confirm('Apagar os pontos e os vencedores de todas as rondas? Os jogadores, as rondas e os jokers ficam guardados.')) return;
+        state.rounds.forEach(r => { r.winner=null; r.scores={}; r.previousScores={}; });
+        save(); render(); window.scrollTo(0,0);
+      } else if (action === 'new-game') {
+        if (!confirm('Começar um novo jogo? A partida atual, com pontos, fica guardada no histórico.')) return;
+        if(!archiveCurrentGame()){alert('Não foi possível guardar o jogo anterior. Exporta uma cópia de segurança e tenta novamente.');return;}
+        state = defaultState(); ui.roundsExpanded = false; save(); render(); window.scrollTo(0,0);
+      }
+    });
+
+    app.addEventListener('input', event => {
+      const input = event.target;
+      const field = input.dataset.field;
+      const id = input.dataset.playerId;
+      const r = input.dataset.roundId ? roundById(input.dataset.roundId) : null;
+      if (field === 'player-name') {
+        const p = playerById(id);
+        if (!p) return;
+        p.name = input.value;
+        // Atualizar a acessibilidade dos botões sem reconstruir os inputs.
+        const remove = input.closest('.player-config')?.querySelector('[data-action="remove-player"]');
+        if (remove) remove.setAttribute('aria-label', `Remover ${p.name || 'jogador'}`);
+        save(); updateSetup();
+      } else if (field === 'round-contract' && r) {
+        r.contract = input.value; save(); updateSetup();
+      } else if (field === 'round-cards' && r) {
+        r.cards = /^\d+$/.test(input.value) ? Number(input.value) : null;
+        save(); updateSetup();
+      } else if (field === 'score' && r && r.winner !== id && playerById(id)) {
+        // Vazio significa não preenchido; não deve contar como zero automaticamente.
+        const raw = input.value.trim();
+        r.scores[id] = /^\d+$/.test(raw) && Number.isSafeInteger(Number(raw)) ? Number(raw) : null;
+        save();
+        // Atualiza cabeçalho/estado da ronda, mas preserva o foco do campo em edição.
+        const done = isRoundComplete(r);
+        const card = input.closest('.round-card');
+        if (card) {
+          const label = card.querySelector('.round-header .pill');
+          const footer = card.querySelector('.round-footer');
+          const missing = state.players.filter(p => scoreOf(r,p.id) === null).length;
+          if (label) {
+            label.textContent = done ? 'Concluída' : r.winner ? `${missing} por preencher` : 'Por fechar';
+            label.className = `pill ${done?'pill-done':'pill-pending'}`;
+          }
+          if (footer) footer.innerHTML = done ? `<span class="ok">✓ Ronda concluída · ${escapeHTML(playerById(r.winner)?.name || 'Vencedor')} recebe <strong>+${formatInt(roundContribution(r,r.winner))}</strong> pontos.</span>` :
+            r.winner ? `Introduz os pontos em falta (${missing}). O vencedor receberá a soma dos pontos dos restantes.` : 'Toca na coroa ♛ para marcar quem fechou a ronda.';
+        }
+        updateStandings();
+      }
+    });
+
+    app.addEventListener('change', event => {
+      const input = event.target;
+      if (input.dataset.field !== 'score' && input.dataset.field !== 'round-cards') return;
+      if (input.dataset.field === 'score') {
+        const r = roundById(input.dataset.roundId);
+        if (!r) return;
+        const number = r.scores[input.dataset.playerId];
+        input.value = number === null || number === undefined ? '' : String(number);
+      } else {
+        const r = roundById(input.dataset.roundId);
+        if (!r) return;
+        if (r.cards !== null && (!Number.isSafeInteger(r.cards) || r.cards < 1 || r.cards > 99)) {
+          r.cards = null; input.value = '';
+          save(); updateSetup();
+        }
+      }
+    });
+
+    app.addEventListener('toggle', event => {
+      if (event.target.matches('[data-rounds-details]')) ui.roundsExpanded = event.target.open;
+    }, true);
+
+    window.addEventListener('storage', event => {
+      if (event.key === LIBRARY_KEY) {
+        const next = loadLibrary();
+        if (next) { state=next.current;history=next.history;render(); }
+      }
+    });
+
+    // Reforça a gravação quando a aplicação fica em segundo plano ou o telefone bloqueia.
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
+    window.addEventListener('pagehide',()=>save());
+    document.getElementById('backupFile').addEventListener('change',async event=>{
+      const f=event.target.files?.[0];event.target.value='';await importBackup(f);
+    });
+    if('serviceWorker' in navigator && location.protocol==='https:'){
+      navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(e=>console.warn('Modo offline não disponível:',e));
+    }
+    save();render();
+  })();
+  </script>
+</body>
+</html>
